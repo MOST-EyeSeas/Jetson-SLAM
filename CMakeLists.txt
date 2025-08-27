@@ -35,6 +35,7 @@ include(CheckCXXCompilerFlag)
 #endif()
 
 message(STATUS "${CMAKE_CXX_FLAGS}")
+find_package(Eigen3 3.1.0 REQUIRED)
 
 find_package(CUDA REQUIRED)
 set(CUDA_NVCC_FLAGS "--std c++14")
@@ -47,7 +48,6 @@ if(NOT OpenCV_FOUND)
   message(FATAL_ERROR "OpenCV >= 4 not found.")
 endif()
 
-find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 
 include_directories(
