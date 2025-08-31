@@ -1,0 +1,58 @@
+%YAML:1.0
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters (copied from /home/ros_ws/src/drone_gui/config/flc_camera_info.yaml)
+#--------------------------------------------------------------------------------------------
+
+# Optional GPU flags
+gpu.use_gpu: 0
+gpu.is_jetson: 0
+
+# Camera intrinsics
+Camera.fx: 525.0
+Camera.fy: 525.0
+Camera.cx: 320.0
+Camera.cy: 180.0
+
+# Distortion (plumb_bob)
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
+
+# Image size and FPS
+Camera.width: 640
+Camera.height: 360
+Camera.fps: 30.0
+
+# Color order (0: BGR, 1: RGB)
+Camera.RGB: 1
+
+# ORB Parameters
+ORBextractor.nFeatures: 1000
+ORBextractor.scaleFactor: 1.2
+ORBextractor.nLevels: 8
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+# GPU extractor related (set non-zero defaults)
+ORBextractor.tile_h: 30
+ORBextractor.tile_w: 30
+ORBextractor.fixed_multi_scale_tile_size: 0
+ORBextractor.apply_nms_ms: 0
+ORBextractor.nms_ms_mode_gpu: 1
+ORBextractor.th_FAST_MIN: 7
+ORBextractor.th_FAST_MAX: 20
+ORBextractor.FAST_N_MIN: 9
+ORBextractor.FAST_N_MAX: 14
+
+# Viewer (defaults)
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500
