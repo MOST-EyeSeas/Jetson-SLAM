@@ -1,7 +1,7 @@
 %YAML:1.0
 
 #--------------------------------------------------------------------------------------------
-# Camera Parameters (copied from /home/ros_ws/src/drone_gui/config/flc_camera_info.yaml)
+# Camera Parameters (525 model @ 640x360)
 #--------------------------------------------------------------------------------------------
 
 # Optional GPU flags
@@ -14,7 +14,7 @@ Camera.fy: 525.0
 Camera.cx: 320.0
 Camera.cy: 180.0
 
-# Distortion (plumb_bob)
+# Distortion (set to zero)
 Camera.k1: 0.0
 Camera.k2: 0.0
 Camera.p1: 0.0
@@ -28,12 +28,12 @@ Camera.fps: 30.0
 # Color order (0: BGR, 1: RGB)
 Camera.RGB: 1
 
-# ORB Parameters
-ORBextractor.nFeatures: 1000
-ORBextractor.scaleFactor: 1.2
-ORBextractor.nLevels: 8
-ORBextractor.iniThFAST: 20
-ORBextractor.minThFAST: 7
+# ORB Parameters (tuned for low contrast/texture)
+ORBextractor.nFeatures: 2000
+ORBextractor.scaleFactor: 1.1
+ORBextractor.nLevels: 10
+ORBextractor.iniThFAST: 12
+ORBextractor.minThFAST: 5
 # GPU extractor related (set non-zero defaults)
 ORBextractor.tile_h: 30
 ORBextractor.tile_w: 30

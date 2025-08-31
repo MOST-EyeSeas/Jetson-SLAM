@@ -115,11 +115,25 @@ bool Initializer::Initialize(const Frame &CurrentFrame, const vector<int> &vMatc
     // Compute ratio of scores
     float RH = SH/(SH+SF);
 
-    // Try to reconstruct from homography or fundamental depending on the ratio (0.40-0.45)
-    if(RH>0.40)
-        return ReconstructH(vbMatchesInliersH,H,mK,R21,t21,vP3D,vbTriangulated,1.0,50);
-    else //if(pF_HF>0.6)
-        return ReconstructF(vbMatchesInliersF,F,mK,R21,t21,vP3D,vbTriangulated,1.0,50);
+    // Bias to Fundamental-first to avoid planar degeneracy; use Homography as fallback.
+    // If F reconstruction fails, try H; if H fails, try F. This improves robustness in near-planar scenes.
+    bool ok = false;
+
+    // Prefer Fundamental first
+    ok = ReconstructF(vbMatchesInliersF,F,mK,R21,t21,vP3D,vbTriangulated,0.5,50);
+    if(!ok)
+    {
+        ok = ReconstructH(vbMatchesInliersH,H,mK,R21,t21,vP3D,vbTriangulated,0.5,50);
+        if(!ok)
+        {
+            // As a last resort, pick based on score ratio
+            if(RH>0.40)
+                return ReconstructH(vbMatchesInliersH,H,mK,R21,t21,vP3D,vbTriangulated,0.5,50);
+            else
+                return ReconstructF(vbMatchesInliersF,F,mK,R21,t21,vP3D,vbTriangulated,0.5,50);
+        }
+    }
+    return ok;
 
     return false;
 }
@@ -505,7 +519,7 @@ bool Initializer::ReconstructF(vector<bool> &vbMatchesInliers, cv::Mat &F21, cv:
     R21 = cv::Mat();
     t21 = cv::Mat();
 
-    int nMinGood = max(static_cast<int>(0.9*N),minTriangulated);
+    int nMinGood = max(static_cast<int>(0.8*N),minTriangulated);
 
     int nsimilar = 0;
     if(nGood1>0.7*maxGood)
@@ -722,7 +736,7 @@ bool Initializer::ReconstructH(vector<bool> &vbMatchesInliers, cv::Mat &H21, cv:
     }
 
 
-    if(secondBestGood<0.75*bestGood && bestParallax>=minParallax && bestGood>minTriangulated && bestGood>0.9*N)
+    if(secondBestGood<0.75*bestGood && bestParallax>=minParallax && bestGood>minTriangulated && bestGood>0.8*N)
     {
         vR[bestSolutionIdx].copyTo(R21);
         vt[bestSolutionIdx].copyTo(t21);

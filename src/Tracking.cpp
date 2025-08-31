@@ -791,7 +791,53 @@ void Tracking::MonocularInitialization()
             tcw.copyTo(Tcw.rowRange(0,3).col(3));
             mCurrentFrame.SetPose(Tcw);
 
-            CreateInitialMapMonocular();
+            // Bootstrap: create initial map without strict post-BA gates
+            // Create KeyFrames
+            KeyFrame* pKFini = new KeyFrame(mInitialFrame,mpMap,mpKeyFrameDB);
+            KeyFrame* pKFcur = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+            pKFini->ComputeBoW();
+            pKFcur->ComputeBoW();
+            mpMap->AddKeyFrame(pKFini);
+            mpMap->AddKeyFrame(pKFcur);
+
+            // Triangulated points
+            for(size_t i=0; i<mvIniMatches.size(); i++)
+            {
+                if(mvIniMatches[i]<0) continue;
+                cv::Mat worldPos(mvIniP3D[i]);
+                if(!cv::checkRange(worldPos)) continue;
+                if(worldPos.rows!=3) continue;
+                MapPoint* pMP = new MapPoint(worldPos,pKFcur,mpMap);
+                pKFini->AddMapPoint(pMP,i);
+                pKFcur->AddMapPoint(pMP,mvIniMatches[i]);
+                pMP->AddObservation(pKFini,i);
+                pMP->AddObservation(pKFcur,mvIniMatches[i]);
+                pMP->ComputeDistinctiveDescriptors();
+                pMP->UpdateNormalAndDepth();
+                mpMap->AddMapPoint(pMP);
+                mCurrentFrame.mvpMapPoints[mvIniMatches[i]] = pMP;
+                mCurrentFrame.mvbOutlier[mvIniMatches[i]] = false;
+            }
+
+            // Light BA (5 iters) to stabilize
+            Optimizer::GlobalBundleAdjustemnt(mpMap,5);
+
+            // Finalize bootstrap without strict 100-point check
+            mpLocalMapper->InsertKeyFrame(pKFini);
+            mpLocalMapper->InsertKeyFrame(pKFcur);
+            mCurrentFrame.SetPose(pKFcur->GetPose());
+            mnLastKeyFrameId=mCurrentFrame.mnId;
+            mpLastKeyFrame = pKFcur;
+            mvpLocalKeyFrames.push_back(pKFcur);
+            mvpLocalKeyFrames.push_back(pKFini);
+            mvpLocalMapPoints=mpMap->GetAllMapPoints();
+            mpReferenceKF = pKFcur;
+            mCurrentFrame.mpReferenceKF = pKFcur;
+            mLastFrame = Frame(mCurrentFrame);
+            mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
+            mpMapDrawer->SetCurrentCameraPose(pKFcur->GetPose());
+            mpMap->mvpKeyFrameOrigins.push_back(pKFini);
+            mState=OK;
         }
     }
 }
@@ -845,13 +891,13 @@ void Tracking::CreateInitialMapMonocular()
     // Bundle Adjustment
     cout << "New Map created with " << mpMap->MapPointsInMap() << " points" << endl;
 
-    Optimizer::GlobalBundleAdjustemnt(mpMap,20);
+    Optimizer::GlobalBundleAdjustemnt(mpMap,10);
 
     // Set median depth to 1
     float medianDepth = pKFini->ComputeSceneMedianDepth(2);
     float invMedianDepth = 1.0f/medianDepth;
 
-    if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<100)
+    if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<50)
     {
         cout << "Wrong initialization, reseting..." << endl;
         Reset();
