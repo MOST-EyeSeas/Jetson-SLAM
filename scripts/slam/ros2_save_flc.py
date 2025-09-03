@@ -17,6 +17,10 @@ class FLCImageSaver(Node):
         self.declare_parameter('use_grayscale', True)
         self.declare_parameter('use_clahe', True)
         self.declare_parameter('use_sharpen', False)
+        # Timestamp handling
+        self.declare_parameter('timestamp_source', 'header')  # 'header' or 'arrival'
+        self.declare_parameter('enforce_monotonic', True)
+        self.declare_parameter('monotonic_strategy', 'clamp')  # 'clamp' or 'skip'
 
         self.image_topic = self.get_parameter('image_topic').get_parameter_value().string_value
         self.output_dir = self.get_parameter('output_dir').get_parameter_value().string_value
@@ -24,6 +28,9 @@ class FLCImageSaver(Node):
         self.use_grayscale = self.get_parameter('use_grayscale').get_parameter_value().bool_value
         self.use_clahe = self.get_parameter('use_clahe').get_parameter_value().bool_value
         self.use_sharpen = self.get_parameter('use_sharpen').get_parameter_value().bool_value
+        self.timestamp_source = self.get_parameter('timestamp_source').get_parameter_value().string_value
+        self.enforce_monotonic = self.get_parameter('enforce_monotonic').get_parameter_value().bool_value
+        self.monotonic_strategy = self.get_parameter('monotonic_strategy').get_parameter_value().string_value
 
         self.images_dir = os.path.join(self.output_dir, 'images')
         os.makedirs(self.images_dir, exist_ok=True)
@@ -33,9 +40,13 @@ class FLCImageSaver(Node):
 
         self.bridge = CvBridge()
         self.saved = 0
+        self.last_stamp_ns = -1
         self.subscription = self.create_subscription(Image, self.image_topic, self.cb, 10)
         self.get_logger().info(f"Saving images from {self.image_topic} to {self.images_dir}")
         self.get_logger().info(f"Preprocess: grayscale={self.use_grayscale}, clahe={self.use_clahe}, sharpen={self.use_sharpen}")
+        self.get_logger().info(
+            f"Timestamps: source={self.timestamp_source}, enforce_monotonic={self.enforce_monotonic}, strategy={self.monotonic_strategy}"
+        )
 
     def close_times(self):
         if not self.closed:
@@ -68,14 +79,27 @@ class FLCImageSaver(Node):
         return out
 
     def cb(self, msg: Image):
-        # Use header stamp in nanoseconds for filename and times.txt
-        stamp_ns = msg.header.stamp.sec * 1_000_000_000 + msg.header.stamp.nanosec
+        # Choose timestamp source
+        if self.timestamp_source == 'arrival':
+            now = self.get_clock().now()
+            stamp_ns = int(now.nanoseconds)
+        else:
+            stamp_ns = msg.header.stamp.sec * 1_000_000_000 + msg.header.stamp.nanosec
+
+        # Enforce strict monotonic increase if requested
+        if self.enforce_monotonic and self.last_stamp_ns >= 0 and stamp_ns <= self.last_stamp_ns:
+            if self.monotonic_strategy == 'skip':
+                # Skip non-monotonic frame
+                return
+            # Clamp to last + 1 ns to ensure uniqueness and order
+            stamp_ns = self.last_stamp_ns + 1
         fname = os.path.join(self.images_dir, f"{stamp_ns}.png")
         cv_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
         cv_img = self.preprocess(cv_img)
         cv2.imwrite(fname, cv_img)
         self.times_file.write(f"{stamp_ns}\n")
         self.saved += 1
+        self.last_stamp_ns = stamp_ns
         if self.saved % 50 == 0:
             self.get_logger().info(f"Saved {self.saved} frames")
         if self.max_frames > 0 and self.saved >= self.max_frames:

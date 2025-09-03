@@ -32,7 +32,7 @@ Camera.RGB: 1
 ORBextractor.nFeatures: 2000
 ORBextractor.scaleFactor: 1.1
 ORBextractor.nLevels: 10
-ORBextractor.iniThFAST: 12
+ORBextractor.iniThFAST: 10
 ORBextractor.minThFAST: 5
 # GPU extractor related (set non-zero defaults)
 ORBextractor.tile_h: 30

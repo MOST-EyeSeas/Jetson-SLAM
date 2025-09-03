@@ -28,6 +28,8 @@
 #include<unistd.h>
 
 #include <mutex>
+#include <atomic>
+#include <sstream>
 
 namespace Jetson_SLAM
 {
@@ -62,7 +64,11 @@ void Viewer::Run()
     mbFinished = false;
     mbStopped = false;
 
-    pangolin::CreateWindowAndBind("Jetson-SLAM: Map Vis",1024,768);
+    static std::atomic<int> s_window_counter {0};
+    int id = ++s_window_counter;
+    std::stringstream winname;
+    winname << "Jetson-SLAM: Map Vis #" << id;
+    pangolin::CreateWindowAndBind(winname.str(),1024,768);
 
     // 3D Mouse handler requires depth testing to be enabled
     glEnable(GL_DEPTH_TEST);

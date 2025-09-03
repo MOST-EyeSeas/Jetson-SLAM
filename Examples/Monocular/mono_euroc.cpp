@@ -29,6 +29,7 @@
 #include <opencv2/imgcodecs/legacy/constants_c.h>
 #include<System.h>
 #include<unistd.h>
+#include <cstdlib>
 
 using namespace std;
 
@@ -108,7 +109,8 @@ int main(int argc, char **argv)
         else if(ni>0)
             T = tframe-vTimestamps[ni-1];
 
-        if(ttrack<T)
+        const char* no_sleep = std::getenv("JSLAM_NO_SLEEP");
+        if(!no_sleep && ttrack<T)
             usleep((T-ttrack)*1e6);
     }
 
