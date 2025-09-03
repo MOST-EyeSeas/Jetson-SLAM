@@ -3,10 +3,10 @@
 gpu.use_gpu: 0
 gpu.is_jetson: 0
 
-Camera.fx: 525
-Camera.fy: 525
-Camera.cx: 320
-Camera.cy: 180
+Camera.fx: 181.12
+Camera.fy: 152.888
+Camera.cx: 319.317
+Camera.cy: 179.866
 
 Camera.k1: 0.0
 Camera.k2: 0.0
@@ -18,12 +18,12 @@ Camera.height: 360
 Camera.fps: 30
 Camera.RGB: 1
 
-ORBextractor.nFeatures: 2500
+ORBextractor.nFeatures: 3000
 ORBextractor.scaleFactor: 1.050000
 ORBextractor.nLevels: 10
 ORBextractor.iniThFAST: 8
 ORBextractor.minThFAST: 5
-ORBextractor.tile_h: 24
+ORBextractor.tile_h: 30
 ORBextractor.tile_w: 30
 ORBextractor.fixed_multi_scale_tile_size: 0
 ORBextractor.apply_nms_ms: 0
