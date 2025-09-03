@@ -1,0 +1,45 @@
+%YAML:1.0
+
+gpu.use_gpu: 0
+gpu.is_jetson: 0
+
+Camera.fx: 525
+Camera.fy: 525
+Camera.cx: 320
+Camera.cy: 180
+
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
+
+Camera.width: 640
+Camera.height: 360
+Camera.fps: 30
+Camera.RGB: 1
+
+ORBextractor.nFeatures: 2500
+ORBextractor.scaleFactor: 1.050000
+ORBextractor.nLevels: 10
+ORBextractor.iniThFAST: 8
+ORBextractor.minThFAST: 5
+ORBextractor.tile_h: 24
+ORBextractor.tile_w: 30
+ORBextractor.fixed_multi_scale_tile_size: 0
+ORBextractor.apply_nms_ms: 0
+ORBextractor.nms_ms_mode_gpu: 1
+ORBextractor.th_FAST_MIN: 7
+ORBextractor.th_FAST_MAX: 20
+ORBextractor.FAST_N_MIN: 9
+ORBextractor.FAST_N_MAX: 14
+
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500

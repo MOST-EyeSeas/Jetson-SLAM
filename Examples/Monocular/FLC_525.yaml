@@ -1,24 +1,24 @@
 %YAML:1.0
 
 #--------------------------------------------------------------------------------------------
-# Camera Parameters (camera_info-aligned @ 640x360)
+# Camera Parameters (525 zero-dist @ 640x360)
 #--------------------------------------------------------------------------------------------
 
 # Optional GPU flags
 gpu.use_gpu: 0
 gpu.is_jetson: 0
 
-# Camera intrinsics (from /camera/flc/camera_info)
-Camera.fx: 181.12027
-Camera.fy: 152.8883
-Camera.cx: 319.31663
-Camera.cy: 179.86583
+# Camera intrinsics (zero-dist model used in offline tests)
+Camera.fx: 525.0
+Camera.fy: 525.0
+Camera.cx: 320.0
+Camera.cy: 180.0
 
-# Distortion (from /camera/flc/camera_info)
-Camera.k1: -0.001384
-Camera.k2: -4.7e-05
-Camera.p1: 0.000402
-Camera.p2: -0.000368
+# Distortion (zero)
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
 
 # Image size and FPS
 Camera.width: 640
@@ -28,13 +28,12 @@ Camera.fps: 30.0
 # Color order (0: BGR, 1: RGB)
 Camera.RGB: 1
 
-# ORB Parameters (tuned for low contrast/texture)
+# ORB Parameters (same as FLC.yaml)
 ORBextractor.nFeatures: 2000
 ORBextractor.scaleFactor: 1.1
 ORBextractor.nLevels: 10
 ORBextractor.iniThFAST: 10
 ORBextractor.minThFAST: 5
-# GPU extractor related (set non-zero defaults)
 ORBextractor.tile_h: 30
 ORBextractor.tile_w: 30
 ORBextractor.fixed_multi_scale_tile_size: 0
@@ -56,3 +55,5 @@ Viewer.ViewpointX: 0
 Viewer.ViewpointY: -0.7
 Viewer.ViewpointZ: -1.8
 Viewer.ViewpointF: 500
+
+
