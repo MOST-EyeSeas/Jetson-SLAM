@@ -14,11 +14,11 @@ Camera.fy: 152.8883
 Camera.cx: 319.31663
 Camera.cy: 179.86583
 
-# Distortion (from /camera/flc/camera_info)
-Camera.k1: -0.001384
-Camera.k2: -4.7e-05
-Camera.p1: 0.000402
-Camera.p2: -0.000368
+# Distortion disabled
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
 
 # Image size and FPS
 Camera.width: 640
