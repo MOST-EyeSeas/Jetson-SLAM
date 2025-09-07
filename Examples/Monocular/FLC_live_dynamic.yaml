@@ -18,10 +18,10 @@ Camera.height: 360
 Camera.fps: 30
 Camera.RGB: 1
 
-ORBextractor.nFeatures: 3500
+ORBextractor.nFeatures: 3000
 ORBextractor.scaleFactor: 1.050000
-ORBextractor.nLevels: 8
-ORBextractor.iniThFAST: 6
+ORBextractor.nLevels: 10
+ORBextractor.iniThFAST: 8
 ORBextractor.minThFAST: 5
 ORBextractor.tile_h: 30
 ORBextractor.tile_w: 30
