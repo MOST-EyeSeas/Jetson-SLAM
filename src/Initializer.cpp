@@ -115,22 +115,40 @@ bool Initializer::Initialize(const Frame &CurrentFrame, const vector<int> &vMatc
     // Compute ratio of scores
     float RH = SH/(SH+SF);
 
-    // Bias to Fundamental-first to avoid planar degeneracy; use Homography as fallback.
-    // If F reconstruction fails, try H; if H fails, try F. This improves robustness in near-planar scenes.
+    // Robust init policy:
+    // - Prefer Homography when the scene is likely planar (high RH)
+    // - Otherwise prefer Fundamental
+    // - Increase minimum parallax to avoid accepting near-zero-baseline pairs
+    const float kMinParallaxDeg = 1.0f;   // tightened from 0.5, but not too strict
+    const int   kMinTriangulated = 50;
+
     bool ok = false;
 
-    // Prefer Fundamental first
-    ok = ReconstructF(vbMatchesInliersF,F,mK,R21,t21,vP3D,vbTriangulated,0.5,50);
+    // Force Homography-first for robust planar initialization in this scene
+    ok = ReconstructH(vbMatchesInliersH,H,mK,R21,t21,vP3D,vbTriangulated,kMinParallaxDeg,kMinTriangulated);
     if(!ok)
     {
-        ok = ReconstructH(vbMatchesInliersH,H,mK,R21,t21,vP3D,vbTriangulated,0.5,50);
-        if(!ok)
+        ok = ReconstructF(vbMatchesInliersF,F,mK,R21,t21,vP3D,vbTriangulated,kMinParallaxDeg,kMinTriangulated);
+    }
+
+    // As a last resort, pick by score ratio with the same stricter parallax
+    if(!ok)
+    {
+        // Try once more with a relaxed parallax if both strict attempts failed
+        const float kFallbackParallaxDeg = 0.5f;
+        if(RH>0.60f)
         {
-            // As a last resort, pick based on score ratio
-            if(RH>0.40)
-                return ReconstructH(vbMatchesInliersH,H,mK,R21,t21,vP3D,vbTriangulated,0.5,50);
-            else
-                return ReconstructF(vbMatchesInliersF,F,mK,R21,t21,vP3D,vbTriangulated,0.5,50);
+            if(ReconstructH(vbMatchesInliersH,H,mK,R21,t21,vP3D,vbTriangulated,kFallbackParallaxDeg,kMinTriangulated))
+                return true;
+            if(ReconstructF(vbMatchesInliersF,F,mK,R21,t21,vP3D,vbTriangulated,kFallbackParallaxDeg,kMinTriangulated))
+                return true;
+        }
+        else
+        {
+            if(ReconstructF(vbMatchesInliersF,F,mK,R21,t21,vP3D,vbTriangulated,kFallbackParallaxDeg,kMinTriangulated))
+                return true;
+            if(ReconstructH(vbMatchesInliersH,H,mK,R21,t21,vP3D,vbTriangulated,kFallbackParallaxDeg,kMinTriangulated))
+                return true;
         }
     }
     return ok;
@@ -547,6 +565,7 @@ bool Initializer::ReconstructF(vector<bool> &vbMatchesInliers, cv::Mat &F21, cv:
 
             R1.copyTo(R21);
             t1.copyTo(t21);
+            // Keep native baseline/scale from reconstruction (no forced scaling)
             return true;
         }
     }else if(maxGood==nGood2)
@@ -558,6 +577,7 @@ bool Initializer::ReconstructF(vector<bool> &vbMatchesInliers, cv::Mat &F21, cv:
 
             R2.copyTo(R21);
             t1.copyTo(t21);
+            // Keep native baseline/scale from reconstruction (no forced scaling)
             return true;
         }
     }else if(maxGood==nGood3)
@@ -569,6 +589,7 @@ bool Initializer::ReconstructF(vector<bool> &vbMatchesInliers, cv::Mat &F21, cv:
 
             R1.copyTo(R21);
             t2.copyTo(t21);
+            // Keep native baseline/scale from reconstruction (no forced scaling)
             return true;
         }
     }else if(maxGood==nGood4)
@@ -580,6 +601,7 @@ bool Initializer::ReconstructF(vector<bool> &vbMatchesInliers, cv::Mat &F21, cv:
 
             R2.copyTo(R21);
             t2.copyTo(t21);
+            // Keep native baseline/scale from reconstruction (no forced scaling)
             return true;
         }
     }
@@ -742,7 +764,21 @@ bool Initializer::ReconstructH(vector<bool> &vbMatchesInliers, cv::Mat &H21, cv:
         vt[bestSolutionIdx].copyTo(t21);
         vP3D = bestP3D;
         vbTriangulated = bestTriangulated;
-
+        // Enforce a reasonable initial baseline and rescale points accordingly
+        const float desiredBaseline = 0.02f; // 2 cm
+        float bl = cv::norm(t21);
+        if(bl>1e-6f)
+        {
+            float s = desiredBaseline / bl;
+            t21 *= s;
+            for(size_t i=0; i<vP3D.size(); ++i)
+            {
+                if(vbTriangulated[i])
+                {
+                    vP3D[i].x *= s; vP3D[i].y *= s; vP3D[i].z *= s;
+                }
+            }
+        }
         return true;
     }
 

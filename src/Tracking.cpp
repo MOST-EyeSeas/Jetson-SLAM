@@ -1274,18 +1274,45 @@ bool Tracking::NeedNewKeyFrame()
         thRefRatio = 0.4f;
 
     if(mSensor==System::MONOCULAR)
-        thRefRatio = 0.9f;
+        thRefRatio = 0.8f; // encourage KF insertion under weaker tracking
 
     // Condition 1a: More than "MaxFrames" have passed from last keyframe insertion
     const bool c1a = mCurrentFrame.mnId>=mnLastKeyFrameId+mMaxFrames;
     // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
     const bool c1b = (mCurrentFrame.mnId>=mnLastKeyFrameId+mMinFrames && bLocalMappingIdle);
+    // Condition 1d: high rotation since last KF (promote KF during yaw to avoid loss)
+    bool c1d = false;
+    {
+        // Estimate relative rotation magnitude between current frame and reference KF
+        cv::Mat Rcw = mCurrentFrame.mTcw.rowRange(0,3).colRange(0,3);
+        cv::Mat Rkw = mpReferenceKF->GetRotation();
+        cv::Mat Rwk = Rkw.t();
+        cv::Mat R_rel = Rcw*Rwk; // roughly cam_wrt_KF
+        double trace = R_rel.at<float>(0,0)+R_rel.at<float>(1,1)+R_rel.at<float>(2,2);
+        trace = std::min(3.0, std::max(-1.0, trace));
+        double angle = std::acos( (trace-1.0)/2.0 ); // radians
+        c1d = angle > (5.0 * CV_PI/180.0); // >5 degrees
+    }
     //Condition 1c: tracking is weak
     const bool c1c =  mSensor!=System::MONOCULAR && (mnMatchesInliers<nRefMatches*0.25 || bNeedToInsertClose) ;
     // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.
-    const bool c2 = ((mnMatchesInliers<nRefMatches*thRefRatio|| bNeedToInsertClose) && mnMatchesInliers>15);
+    const bool c2 = ((mnMatchesInliers<nRefMatches*thRefRatio|| bNeedToInsertClose));
 
-    if((c1a||c1b||c1c)&&c2)
+    // Promote keyframe immediately under strong rotation to stabilize mapping
+    if(c1d)
+    {
+        if(bLocalMappingIdle)
+        {
+            return true;
+        }
+        else
+        {
+            mpLocalMapper->InterruptBA();
+            return false;
+        }
+    }
+
+    if((c1a||c1b||c1c) && c2)
     {
         // If the mapping accepts keyframes, insert keyframe.
         // Otherwise send a signal to interrupt BA
