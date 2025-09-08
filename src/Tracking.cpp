@@ -904,19 +904,21 @@ void Tracking::CreateInitialMapMonocular()
         return;
     }
 
-    // Scale initial baseline
+    // Set a reasonable baseline (0.01m) instead of unit baseline
+    // This avoids the unrealistic 30cm jump from median depth scaling
+    float desiredBaseline = 0.01f; // 1cm baseline
     cv::Mat Tc2w = pKFcur->GetPose();
-    Tc2w.col(3).rowRange(0,3) = Tc2w.col(3).rowRange(0,3)*invMedianDepth;
+    Tc2w.col(3).rowRange(0,3) = Tc2w.col(3).rowRange(0,3) * desiredBaseline;
     pKFcur->SetPose(Tc2w);
 
-    // Scale points
+    // Scale points to match the new baseline
     vector<MapPoint*> vpAllMapPoints = pKFini->GetMapPointMatches();
     for(size_t iMP=0; iMP<vpAllMapPoints.size(); iMP++)
     {
         if(vpAllMapPoints[iMP])
         {
             MapPoint* pMP = vpAllMapPoints[iMP];
-            pMP->SetWorldPos(pMP->GetWorldPos()*invMedianDepth);
+            pMP->SetWorldPos(pMP->GetWorldPos() * desiredBaseline);
         }
     }
 
